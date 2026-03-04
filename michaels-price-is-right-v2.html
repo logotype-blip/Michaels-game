@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Michael's Price is Right</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+
+<!-- ============================================================
+  🔥 FIREBASE CONFIG – paste your config object here!
+  
+  1. Go to https://console.firebase.google.com
+  2. Create a new project (any name)
+  3. Click "Add app" → Web (</>)
+  4. Register app, copy the firebaseConfig object
+  5. Paste it below, replacing the placeholder values
+  6. Go to "Realtime Database" in Firebase → Create database
+     → Start in TEST MODE → Choose any region
+  ============================================================ -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, set, get, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBYM7JIHaGRF5Yjov017OKkRdFQ6njVHc4",
+    authDomain: "michaels-price-is-right.firebaseapp.com",
+    databaseURL: "https://michaels-price-is-right-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "michaels-price-is-right",
+    storageBucket: "michaels-price-is-right.firebasestorage.app",
+    messagingSenderId: "710246911168",
+    appId: "1:710246911168:web:44eb1777e0e3b9219b3125",
+    measurementId: "G-YDZ9YSY7SR"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  window._db = db;
+  window._ref = ref;
+  window._set = set;
+  window._get = get;
+  window._onValue = onValue;
+  window._update = update;
+  window._firebaseReady = true;
+  document.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<style>
+  :root {
+    --gold: #FFD700;
+    --gold2: #FF8C00;
+    --red: #E8001D;
+    --blue: #003DA5;
+    --dark: #080810;
+    --card: rgba(255,255,255,0.05);
+    --border: rgba(255,255,255,0.10);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--dark);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    color: #fff;
+    overflow-x: hidden;
+  }
+  body::after {
+    content:'';
+    position:fixed;
+    inset:0;
+    background:
+      radial-gradient(ellipse 60% 40% at 50% -10%, rgba(255,215,0,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 30% at 10% 80%, rgba(0,61,165,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse 40% 30% at 90% 80%, rgba(232,0,29,0.05) 0%, transparent 50%);
+    pointer-events:none; z-index:0;
+  }
+  .wrap { position:relative; z-index:1; max-width:860px; margin:0 auto; padding:16px 20px 60px; }
+
+  /* HEADER */
+  .show-header { text-align:center; padding:28px 0 16px; }
+  .presented-by { font-size:11px; letter-spacing:5px; color:rgba(255,255,255,0.35); text-transform:uppercase; margin-bottom:4px; }
+  .host-name { font-family:'Bebas Neue',sans-serif; font-size:clamp(18px,5vw,32px); letter-spacing:6px; color:rgba(255,255,255,0.55); }
+  .show-title {
+    font-family:'Bebas Neue',sans-serif;
+    font-size:clamp(64px,14vw,120px);
+    line-height:0.85;
+    background:linear-gradient(175deg,#fff8d6 0%,#FFD700 35%,#FF8C00 70%,#c85000 100%);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    filter:drop-shadow(0 6px 30px rgba(255,200,0,0.35));
+    letter-spacing:3px;
+  }
+  .show-stars { color:var(--gold); font-size:16px; letter-spacing:5px; margin-top:8px; opacity:0.7; }
+
+  /* ROLE SCREEN */
+  #role-screen { text-align:center; padding:30px 0; }
+  .role-card { background:var(--card); border:1px solid var(--border); border-radius:24px; padding:40px 30px; margin-bottom:20px; }
+  .role-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:4px; color:var(--gold); margin-bottom:28px; }
+  .role-buttons { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; }
+  .btn-host { background:linear-gradient(135deg,#FFD700,#FF8C00); color:#000; border:none; padding:18px 40px; border-radius:50px; font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:3px; cursor:pointer; transition:all .2s; box-shadow:0 4px 24px rgba(255,200,0,0.3); }
+  .btn-host:hover { transform:translateY(-2px); box-shadow:0 8px 32px rgba(255,200,0,0.5); }
+  .btn-player { background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.2); padding:18px 40px; border-radius:50px; font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:3px; cursor:pointer; transition:all .2s; }
+  .btn-player:hover { background:rgba(255,255,255,0.15); }
+  .name-input-wrap { margin:20px auto 0; max-width:360px; }
+  .name-input-wrap input { width:100%; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.2); border-radius:12px; padding:14px 20px; color:#fff; font-family:'DM Sans',sans-serif; font-size:16px; outline:none; text-align:center; transition:border-color .2s; }
+  .name-input-wrap input:focus { border-color:var(--gold); }
+  .name-input-wrap input::placeholder { color:rgba(255,255,255,0.25); }
+  .btn-join { margin-top:12px; background:linear-gradient(135deg,#FFD700,#FF8C00); color:#000; border:none; padding:14px 36px; border-radius:50px; font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:3px; cursor:pointer; transition:all .2s; width:100%; }
+  .btn-join:hover { transform:translateY(-2px); }
+  .error-msg { color:#ff6b6b; font-size:13px; text-align:center; padding:8px; display:none; }
+
+  /* SCOREBOARD */
+  .scoreboard { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:20px; }
+  .score-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px 18px; text-align:center; min-width:100px; transition:all .3s; }
+  .score-card.leader { border-color:rgba(255,215,0,.4); background:rgba(255,215,0,.08); }
+  .score-name { font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:rgba(255,255,255,.5); }
+  .score-pts { font-family:'Bebas Neue',sans-serif; font-size:36px; color:var(--gold); line-height:1; margin-top:2px; }
+  .score-pts small { font-family:'DM Sans',sans-serif; font-size:10px; color:rgba(255,255,255,.3); display:block; }
+
+  /* HOST SCREEN */
+  #host-screen { display:none; }
+  .players-bar { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px 20px; margin-bottom:20px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .players-bar-label { font-size:11px; letter-spacing:4px; color:rgba(255,255,255,0.35); text-transform:uppercase; flex-shrink:0; }
+  .player-chip { background:rgba(255,215,0,0.1); border:1px solid rgba(255,215,0,0.25); border-radius:20px; padding:5px 14px; font-size:13px; font-weight:700; color:var(--gold); letter-spacing:1px; }
+
+  .round-bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+  .pill-tag { display:inline-block; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:20px; padding:4px 14px; font-size:11px; letter-spacing:2px; color:rgba(255,255,255,.4); text-transform:uppercase; }
+
+  .product-card { background:var(--card); border:1px solid var(--border); border-radius:24px; padding:36px 28px; text-align:center; margin-bottom:20px; position:relative; overflow:hidden; }
+  .product-card::before { content:''; position:absolute; top:0;left:0;right:0;height:3px; background:linear-gradient(90deg,var(--red),var(--gold),var(--blue)); }
+  .product-emoji { font-size:72px; display:block; margin-bottom:14px; animation:float 3s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  .product-name { font-family:'Bebas Neue',sans-serif; font-size:clamp(28px,6vw,56px); letter-spacing:3px; line-height:1; margin-bottom:10px; }
+  .product-source { font-size:11px; letter-spacing:3px; color:rgba(255,255,255,0.3); text-transform:uppercase; }
+  .product-source a { color:rgba(255,215,0,0.5); text-decoration:none; }
+  .product-source a:hover { color:var(--gold); }
+
+  .price-wrap { margin-top:22px; }
+  .price-hidden { font-family:'Bebas Neue',sans-serif; font-size:70px; letter-spacing:8px; color:rgba(255,255,255,0.1); border:2px dashed rgba(255,255,255,0.08); border-radius:16px; padding:8px 28px; display:inline-block; }
+  .price-shown { display:none; font-family:'Bebas Neue',sans-serif; font-size:70px; letter-spacing:5px; background:linear-gradient(170deg,#fff8d6,#FFD700,#FF8C00); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; filter:drop-shadow(0 4px 20px rgba(255,200,0,0.5)); animation:popIn .5s cubic-bezier(.175,.885,.32,1.275); }
+  @keyframes popIn { from{transform:scale(0.2) rotate(-8deg);opacity:0} to{transform:scale(1) rotate(0);opacity:1} }
+
+  .guesses-panel { background:var(--card); border:1px solid var(--border); border-radius:20px; padding:24px; margin-bottom:18px; }
+  .guesses-title { font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:4px; color:rgba(255,255,255,.4); margin-bottom:16px; text-align:center; }
+  .guess-item { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 16px; border-radius:12px; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06); margin-bottom:8px; transition:all .3s; flex-wrap:wrap; }
+  .guess-item.locked { border-color:rgba(255,215,0,.2); background:rgba(255,215,0,.04); }
+  .guess-item.winner { border-color:rgba(0,255,136,.4); background:rgba(0,255,136,.07); }
+  .guess-item.exact { border-color:rgba(255,215,0,.5); background:rgba(255,215,0,.1); animation:exactGlow 1s ease infinite alternate; }
+  @keyframes exactGlow { from{box-shadow:0 0 10px rgba(255,215,0,.2)} to{box-shadow:0 0 30px rgba(255,215,0,.5)} }
+  .guess-player { font-weight:800; font-size:14px; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,.7); }
+  .guess-amount { font-family:'Bebas Neue',sans-serif; font-size:24px; color:#fff; }
+  .guess-extra { font-size:12px; color:rgba(255,255,255,.35); }
+  .guess-badge { font-size:11px; border-radius:20px; padding:3px 10px; letter-spacing:1px; }
+  .badge-exact { background:rgba(255,215,0,.15); color:var(--gold); border:1px solid rgba(255,215,0,.3); }
+  .badge-winner { background:rgba(0,255,136,.15); color:#00ff88; border:1px solid rgba(0,255,136,.3); }
+  .no-guesses { text-align:center; color:rgba(255,255,255,.25); font-size:13px; padding:20px 0; letter-spacing:2px; }
+
+  .action-row { display:flex; gap:10px; flex-direction:column; }
+  .btn-big { border:none; padding:16px; border-radius:50px; font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:3px; cursor:pointer; transition:all .2s; width:100%; }
+  .btn-reveal-big { background:linear-gradient(135deg,var(--red),#c00018); color:#fff; box-shadow:0 4px 20px rgba(232,0,29,.3); }
+  .btn-reveal-big:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(232,0,29,.5); }
+  .btn-next-big { background:rgba(255,255,255,.08); color:#fff; border:1px solid rgba(255,255,255,.15); display:none; }
+  .btn-next-big:hover { background:rgba(255,255,255,.15); }
+  .btn-results-big { background:linear-gradient(135deg,#FFD700,#FF8C00); color:#000; box-shadow:0 4px 20px rgba(255,200,0,.3); display:none; }
+  .btn-results-big:hover { transform:translateY(-2px); }
+
+  /* PLAYER SCREEN */
+  #player-screen { display:none; }
+  .player-status { text-align:center; background:var(--card); border:1px solid var(--border); border-radius:24px; padding:36px 28px; margin-bottom:20px; }
+  .status-emoji { font-size:60px; display:block; margin-bottom:12px; }
+  .status-title { font-family:'Bebas Neue',sans-serif; font-size:clamp(24px,6vw,48px); letter-spacing:3px; color:#fff; margin-bottom:6px; }
+  .status-sub { font-size:13px; color:rgba(255,255,255,.35); letter-spacing:2px; }
+
+  .guess-form { background:var(--card); border:1px solid var(--border); border-radius:20px; padding:28px; text-align:center; margin-bottom:16px; }
+  .guess-form-title { font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:4px; color:rgba(255,255,255,.4); margin-bottom:20px; }
+  .guess-input-wrap { position:relative; max-width:300px; margin:0 auto 16px; }
+  .currency-prefix { position:absolute; left:16px; top:50%; transform:translateY(-50%); font-family:'Bebas Neue',sans-serif; font-size:26px; color:rgba(255,215,0,.5); pointer-events:none; }
+  .guess-input { width:100%; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.2); border-radius:14px; padding:16px 16px 16px 44px; color:#fff; font-family:'Bebas Neue',sans-serif; font-size:32px; letter-spacing:3px; outline:none; transition:border-color .2s; }
+  .guess-input:focus { border-color:var(--gold); }
+  .btn-submit { background:linear-gradient(135deg,#FFD700,#FF8C00); color:#000; border:none; padding:14px 40px; border-radius:50px; font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:3px; cursor:pointer; transition:all .2s; width:100%; max-width:300px; }
+  .btn-submit:hover { transform:translateY(-2px); }
+  .btn-submit:disabled { opacity:.4; cursor:not-allowed; transform:none; }
+
+  .guess-locked { display:none; text-align:center; padding:24px; background:rgba(0,255,136,.05); border:1px solid rgba(0,255,136,.15); border-radius:20px; margin-bottom:16px; }
+  .guess-locked-emoji { font-size:48px; display:block; margin-bottom:10px; }
+  .guess-locked-title { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:3px; color:#00ff88; }
+  .guess-locked-sub { font-size:12px; color:rgba(255,255,255,.3); letter-spacing:2px; margin-top:6px; }
+
+  .round-result { display:none; text-align:center; padding:28px; border-radius:20px; margin-top:0; }
+  .round-result.won { background:rgba(0,255,136,.07); border:1px solid rgba(0,255,136,.3); }
+  .round-result.lost { background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08); }
+  .round-result.exact-win { background:rgba(255,215,0,.1); border:1px solid rgba(255,215,0,.4); animation:exactGlow 1s ease infinite alternate; }
+  .rr-emoji { font-size:52px; display:block; margin-bottom:10px; }
+  .rr-title { font-family:'Bebas Neue',sans-serif; font-size:30px; letter-spacing:3px; }
+  .rr-pts { font-family:'Bebas Neue',sans-serif; font-size:22px; color:var(--gold); margin-top:4px; }
+  .rr-sub { font-size:12px; color:rgba(255,255,255,.35); letter-spacing:2px; margin-top:6px; }
+
+  /* RESULTS */
+  #results-screen { display:none; text-align:center; padding:40px 0; }
+  .trophy-big { font-size:90px; display:block; animation:trophyPop .8s cubic-bezier(.175,.885,.32,1.275) .2s both; filter:drop-shadow(0 10px 30px rgba(255,215,0,.5)); }
+  @keyframes trophyPop { from{transform:scale(0) rotate(-20deg);opacity:0} to{transform:scale(1) rotate(0);opacity:1} }
+  .winner-label { font-size:11px; letter-spacing:5px; color:rgba(255,255,255,.35); text-transform:uppercase; margin-top:16px; }
+  .winner-big { font-family:'Bebas Neue',sans-serif; font-size:clamp(48px,10vw,88px); background:linear-gradient(170deg,#fff8d6,#FFD700,#FF8C00); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; letter-spacing:4px; }
+  .winner-pts { font-family:'Bebas Neue',sans-serif; font-size:26px; color:rgba(255,255,255,.4); letter-spacing:3px; }
+  .final-podium { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin:28px 0; }
+  .podium-card { background:var(--card); border:1px solid var(--border); border-radius:18px; padding:20px 24px; min-width:120px; text-align:center; }
+  .podium-card.p1 { border-color:rgba(255,215,0,.4); background:rgba(255,215,0,.08); }
+  .podium-medal { font-size:28px; display:block; }
+  .podium-name { font-weight:800; font-size:14px; text-transform:uppercase; letter-spacing:1px; margin:6px 0 4px; }
+  .podium-pts { font-family:'Bebas Neue',sans-serif; font-size:34px; color:var(--gold); }
+  .btn-restart { background:rgba(255,255,255,.08); color:#fff; border:1px solid rgba(255,255,255,.15); padding:14px 40px; border-radius:50px; font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:3px; cursor:pointer; transition:all .2s; margin-top:10px; }
+  .btn-restart:hover { background:rgba(255,255,255,.15); }
+
+  .waiting-dot { animation:blink 1.4s infinite; display:inline-block; }
+  .waiting-dot:nth-child(2){animation-delay:.2s}
+  .waiting-dot:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,80%,100%{opacity:0}40%{opacity:1}}
+
+  .confetti-canvas { position:fixed; inset:0; pointer-events:none; z-index:999; }
+
+  @media(max-width:500px) {
+    .product-emoji{font-size:54px}
+    .price-hidden,.price-shown{font-size:48px}
+    .guess-input{font-size:26px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="show-header">
+    <div class="presented-by">Presented by</div>
+    <div class="host-name">MICHAEL'S</div>
+    <div class="show-title">PRICE<br>IS RIGHT</div>
+    <div class="show-stars">★ ★ ★ ★ ★</div>
+  </div>
+
+  <!-- ROLE SCREEN -->
+  <div id="role-screen">
+    <div class="role-card">
+      <div class="role-title">Who are you?</div>
+      <div class="role-buttons">
+        <button class="btn-host" onclick="selectHost()">🎬 I'm Michael</button>
+        <button class="btn-player" onclick="showJoinForm()">🙋 I'm a Player</button>
+      </div>
+      <div class="name-input-wrap" id="join-form" style="display:none">
+        <input type="text" id="player-name-input" placeholder="Enter your name..." maxlength="20">
+        <button class="btn-join" onclick="joinAsPlayer()">JOIN THE SHOW →</button>
+      </div>
+      <div class="error-msg" id="error-msg">Please enter your name!</div>
+    </div>
+  </div>
+
+  <!-- HOST SCREEN -->
+  <div id="host-screen">
+    <div class="players-bar">
+      <span class="players-bar-label">Players</span>
+      <span id="players-list" style="color:rgba(255,255,255,.3);font-size:13px">
+        Waiting<span class="waiting-dot">.</span><span class="waiting-dot">.</span><span class="waiting-dot">.</span>
+      </span>
+    </div>
+
+    <div class="scoreboard" id="host-scoreboard"></div>
+
+    <div class="round-bar">
+      <span class="pill-tag" id="host-round-label">Round 1 of 5</span>
+    </div>
+
+    <div class="product-card">
+      <span class="product-emoji" id="host-emoji">🎁</span>
+      <div class="product-name" id="host-product-name">—</div>
+      <div class="product-source" id="host-product-source"></div>
+      <div class="price-wrap">
+        <div class="price-hidden" id="host-price-hidden">??? kr</div>
+        <div class="price-shown" id="host-price-shown"></div>
+      </div>
+    </div>
+
+    <div class="guesses-panel">
+      <div class="guesses-title">PLAYER GUESSES</div>
+      <div id="host-guesses-list">
+        <div class="no-guesses">Waiting for guesses<span class="waiting-dot">.</span><span class="waiting-dot">.</span><span class="waiting-dot">.</span></div>
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn-big btn-reveal-big" id="reveal-btn" onclick="hostReveal()">🔴 REVEAL THE PRICE!</button>
+      <button class="btn-big btn-next-big" id="next-btn" onclick="hostNext()">NEXT PRODUCT →</button>
+      <button class="btn-big btn-results-big" id="results-btn" onclick="hostEndGame()">🏆 FINAL RESULTS!</button>
+    </div>
+  </div>
+
+  <!-- PLAYER SCREEN -->
+  <div id="player-screen">
+    <div class="scoreboard" id="player-scoreboard"></div>
+
+    <div class="player-status">
+      <span class="status-emoji" id="player-status-emoji">⏳</span>
+      <div class="status-title" id="player-status-title">WAITING FOR MICHAEL</div>
+      <div class="status-sub" id="player-status-sub">The show is about to begin...</div>
+    </div>
+
+    <div class="guess-form" id="guess-form" style="display:none">
+      <div class="guess-form-title">YOUR GUESS</div>
+      <div class="guess-input-wrap">
+        <span class="currency-prefix">kr</span>
+        <input type="number" class="guess-input" id="guess-input" placeholder="0" min="1">
+      </div>
+      <button class="btn-submit" id="submit-btn" onclick="submitGuess()">LOCK IT IN 🔒</button>
+    </div>
+
+    <div class="guess-locked" id="guess-locked">
+      <span class="guess-locked-emoji">🔒</span>
+      <div class="guess-locked-title">GUESS LOCKED!</div>
+      <div class="guess-locked-sub">Waiting for Michael to reveal<span class="waiting-dot">.</span><span class="waiting-dot">.</span><span class="waiting-dot">.</span></div>
+    </div>
+
+    <div class="round-result" id="round-result">
+      <span class="rr-emoji" id="rr-emoji"></span>
+      <div class="rr-title" id="rr-title"></div>
+      <div class="rr-pts" id="rr-pts"></div>
+      <div class="rr-sub" id="rr-sub"></div>
+    </div>
+  </div>
+
+  <!-- RESULTS SCREEN -->
+  <div id="results-screen">
+    <span class="trophy-big">🏆</span>
+    <div id="results-content"></div>
+    <div class="final-podium" id="final-podium"></div>
+    <button class="btn-restart" onclick="location.reload()">🔄 PLAY AGAIN</button>
+  </div>
+
+</div>
+<canvas class="confetti-canvas" id="confetti-canvas"></canvas>
+
+<script>
+// ── PRODUCTS ────────────────────────────────────────────────────────────────
+const PRODUCTS = [
+  { emoji:'🐟', name:'Surströmming 300g',          hint:'Röda Ulven – Swedish classic',        price:84,       source:'foodrunners.se',      url:'https://www.foodrunners.se' },
+  { emoji:'🎵', name:'ABBA Museum Entry',           hint:'Stockholm, adult ticket',             price:250,      source:'abbathemuseum.com',   url:'https://www.abbathemuseum.com/en/visit/' },
+  { emoji:'🍌', name:'"Comedian" – Banana on Wall', hint:'Artwork by Cattelan, sold Nov 2024',  price:65000000, source:'Wikipedia',           url:'https://en.wikipedia.org/wiki/Comedian_(artwork)' },
+  { emoji:'🏝️', name:'Private Island, Sweden',      hint:'Skärgård island with cottage',        price:2200000,  source:'Metromode',          url:'https://metromode.se/home/nu-kan-du-kopa-en-hel-skargardso-for-mindre-an-en-tvaa-i-stan/' },
+  { emoji:'🏠', name:'Luxury Apt 250m², Ulaanbaatar',hint:'Mongolia – city centre',             price:41000,    source:'Properstar',         url:'https://www.properstar.se' }
+];
+
+// ── STATE ───────────────────────────────────────────────────────────────────
+let role = null;
+let myName = null;
+let currentRound = 0;
+let scores = {};
+let isRevealed = false;
+let myGuessThisRound = false;
+let lastPhase = null;
+let lastRound = -1;
+
+// ── FIREBASE HELPERS ────────────────────────────────────────────────────────
+function db() { return window._db; }
+function dbRef(path) { return window._ref(db(), path); }
+async function dbSet(path, val) { await window._set(dbRef(path), val); }
+async function dbGet(path) { const s = await window._get(dbRef(path)); return s.exists() ? s.val() : null; }
+function dbListen(path, cb) { window._onValue(dbRef(path), snap => cb(snap.exists() ? snap.val() : null)); }
+async function dbUpdate(path, val) { await window._update(dbRef(path), val); }
+
+// ── INIT ────────────────────────────────────────────────────────────────────
+document.addEventListener('firebase-ready', () => {
+  // ready – nothing needed
+});
+
+// ── ROLE PICKER ─────────────────────────────────────────────────────────────
+async function selectHost() {
+  role = 'host';
+  myName = 'Michael';
+  document.getElementById('role-screen').style.display = 'none';
+  document.getElementById('host-screen').style.display = 'block';
+  // Reset game in Firebase
+  await dbSet('game', { round: 0, phase: 'guessing', revealed: false, gameOver: false, scores: {} });
+  await dbSet('players', {});
+  await dbSet('guesses', {});
+  scores = {};
+  currentRound = 0;
+  renderHostRound();
+  startHostListeners();
+}
+
+function showJoinForm() {
+  document.getElementById('join-form').style.display = 'block';
+  document.getElementById('player-name-input').focus();
+}
+
+async function joinAsPlayer() {
+  const nameEl = document.getElementById('player-name-input');
+  const name = nameEl.value.trim();
+  if (!name) { document.getElementById('error-msg').style.display='block'; return; }
+  myName = name;
+  role = 'player';
+  document.getElementById('role-screen').style.display = 'none';
+  document.getElementById('player-screen').style.display = 'block';
+  // Register player
+  await dbSet(`players/${sanitize(name)}`, name);
+  startPlayerListeners();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const inp = document.getElementById('player-name-input');
+  if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') joinAsPlayer(); });
+  const gi = document.getElementById('guess-input');
+  if (gi) gi.addEventListener('keydown', e => { if (e.key === 'Enter') submitGuess(); });
+});
+
+function sanitize(s) { return s.replace(/[^a-zA-Z0-9_-]/g,'_'); }
+
+// ── HOST LOGIC ───────────────────────────────────────────────────────────────
+function renderHostRound() {
+  const p = PRODUCTS[currentRound];
+  document.getElementById('host-round-label').textContent = `Round ${currentRound+1} of ${PRODUCTS.length}`;
+  document.getElementById('host-emoji').textContent = p.emoji;
+  document.getElementById('host-product-name').textContent = p.name;
+  document.getElementById('host-product-source').innerHTML = `${p.hint} · <a href="${p.url}" target="_blank">${p.source} ↗</a>`;
+  document.getElementById('host-price-hidden').style.display = 'inline-block';
+  document.getElementById('host-price-shown').style.display = 'none';
+  document.getElementById('reveal-btn').style.display = 'block';
+  document.getElementById('next-btn').style.display = 'none';
+  document.getElementById('results-btn').style.display = 'none';
+  document.getElementById('host-guesses-list').innerHTML = '<div class="no-guesses">Waiting for guesses<span class="waiting-dot">.</span><span class="waiting-dot">.</span><span class="waiting-dot">.</span></div>';
+  isRevealed = false;
+}
+
+function startHostListeners() {
+  // Listen to players
+  dbListen('players', players => {
+    const bar = document.getElementById('players-list');
+    if (!players || Object.keys(players).length === 0) {
+      bar.innerHTML = 'Waiting<span class="waiting-dot">.</span><span class="waiting-dot">.</span><span class="waiting-dot">.</span>';
+      return;
+    }
+    bar.innerHTML = Object.values(players).map(n => `<span class="player-chip">${n}</span>`).join('');
+    renderHostScoreboard(players);
+  });
+
+  // Listen to guesses
+  dbListen('guesses', allGuesses => {
+    const roundGuesses = (allGuesses && allGuesses[currentRound]) ? allGuesses[currentRound] : {};
+    renderHostGuesses(roundGuesses);
+  });
+
+  // Listen to scores from game state
+  dbListen('game/scores', sc => {
+    if (sc) scores = sc;
+  });
+}
+
+function renderHostScoreboard(players) {
+  const sb = document.getElementById('host-scoreboard');
+  if (!players) { sb.innerHTML=''; return; }
+  const names = Object.values(players);
+  if (names.length === 0) { sb.innerHTML=''; return; }
+  const sorted = names.slice().sort((a,b)=>(scores[b]||0)-(scores[a]||0));
+  const top = scores[sorted[0]]||0;
+  sb.innerHTML = sorted.map(n => `
+    <div class="score-card ${(scores[n]||0)===top&&top>0?'leader':''}">
+      <div class="score-name">${n}</div>
+      <div class="score-pts">${scores[n]||0}<small>pts</small></div>
+    </div>`).join('');
+}
+
+function renderHostGuesses(roundGuesses) {
+  const list = document.getElementById('host-guesses-list');
+  const entries = Object.entries(roundGuesses || {});
+  if (entries.length === 0) {
+    list.innerHTML = '<div class="no-guesses">Waiting for guesses<span class="waiting-dot">.</span><span class="waiting-dot">.</span><span class="waiting-dot">.</span></div>';
+    return;
+  }
+
+  const actualPrice = PRODUCTS[currentRound].price;
+
+  if (isRevealed) {
+    const diffs = entries.map(([,g])=>Math.abs(g-actualPrice));
+    const minDiff = Math.min(...diffs);
+    list.innerHTML = entries.map(([key,guess]) => {
+      const name = key.replace(/_/g,' ');
+      const diff = Math.abs(guess - actualPrice);
+      const isExact = diff === 0;
+      const isWinner = diff === minDiff;
+      const sign = guess > actualPrice ? '+' : '-';
+      const diffStr = `${sign}${Math.abs(guess-actualPrice).toLocaleString('sv-SE')} kr`;
+      return `<div class="guess-item ${isExact?'exact':isWinner?'winner':''}">
+        <span class="guess-player">${name}</span>
+        <span class="guess-amount">${guess.toLocaleString('sv-SE')} kr</span>
+        <span class="guess-extra">${isExact?'🎯 Perfect!':diffStr}</span>
+        ${isExact?'<span class="guess-badge badge-exact">+5 pts</span>':isWinner?'<span class="guess-badge badge-winner">+3 pts</span>':''}
+      </div>`;
+    }).join('');
+  } else {
+    list.innerHTML = entries.map(([key]) => {
+      const name = key.replace(/_/g,' ');
+      return `<div class="guess-item locked">
+        <span class="guess-player">${name}</span>
+        <span class="guess-amount">🔒 Locked in</span>
+      </div>`;
+    }).join('');
+  }
+}
+
+async function hostReveal() {
+  isRevealed = true;
+  const p = PRODUCTS[currentRound];
+
+  // Show price
+  document.getElementById('host-price-hidden').style.display = 'none';
+  const shown = document.getElementById('host-price-shown');
+  shown.style.display = 'inline-block';
+  shown.textContent = p.price.toLocaleString('sv-SE') + ' kr';
+
+  // Calculate scores
+  const allGuesses = await dbGet('guesses') || {};
+  const roundGuesses = allGuesses[currentRound] || {};
+  const entries = Object.entries(roundGuesses);
+
+  if (entries.length > 0) {
+    const diffs = entries.map(([,g])=>Math.abs(g-p.price));
+    const minDiff = Math.min(...diffs);
+    entries.forEach(([key, guess]) => {
+      const name = key.replace(/_/g,' ');
+      const diff = Math.abs(guess - p.price);
+      if (diff === 0) scores[name] = (scores[name]||0) + 5;
+      else if (diff === minDiff) scores[name] = (scores[name]||0) + 3;
+    });
+  }
+
+  // Save state
+  await dbUpdate('game', { phase: 'revealed', revealed: true, scores, roundGuesses });
+
+  // Re-render guesses with results
+  renderHostGuesses(roundGuesses);
+
+  document.getElementById('reveal-btn').style.display = 'none';
+  if (currentRound < PRODUCTS.length - 1) {
+    document.getElementById('next-btn').style.display = 'block';
+  } else {
+    document.getElementById('results-btn').style.display = 'block';
+  }
+}
+
+async function hostNext() {
+  currentRound++;
+  isRevealed = false;
+  await dbUpdate('game', { round: currentRound, phase: 'guessing', revealed: false, scores });
+  renderHostRound();
+}
+
+async function hostEndGame() {
+  await dbUpdate('game', { gameOver: true, scores });
+  showResults(scores);
+}
+
+// ── PLAYER LOGIC ─────────────────────────────────────────────────────────────
+function startPlayerListeners() {
+  dbListen('game', state => {
+    if (!state) return;
+    if (state.gameOver) { showResults(state.scores || {}); return; }
+
+    const round = state.round || 0;
+    const p = PRODUCTS[round];
+
+    // Update scoreboard
+    if (state.scores) renderPlayerScoreboard(state.scores);
+
+    // New round
+    if (round !== lastRound) {
+      lastRound = round;
+      currentRound = round;
+      myGuessThisRound = false;
+      lastPhase = null;
+
+      document.getElementById('player-status-emoji').textContent = p.emoji;
+      document.getElementById('player-status-title').textContent = p.name;
+      document.getElementById('player-status-sub').textContent = p.hint;
+
+      document.getElementById('guess-form').style.display = 'block';
+      document.getElementById('guess-locked').style.display = 'none';
+      document.getElementById('round-result').style.display = 'none';
+      document.getElementById('guess-input').value = '';
+      document.getElementById('submit-btn').disabled = false;
+    }
+
+    // Reveal phase
+    if (state.phase === 'revealed' && lastPhase !== 'revealed') {
+      lastPhase = 'revealed';
+      const roundGuesses = state.roundGuesses || {};
+      const myGuess = roundGuesses[sanitize(myName)];
+      const actualPrice = p.price;
+
+      document.getElementById('guess-form').style.display = 'none';
+      document.getElementById('guess-locked').style.display = 'none';
+
+      const rr = document.getElementById('round-result');
+      rr.style.display = 'block';
+
+      if (myGuess === undefined || myGuess === null) {
+        rr.className = 'round-result lost';
+        document.getElementById('rr-emoji').textContent = '😬';
+        document.getElementById('rr-title').textContent = 'NO GUESS!';
+        document.getElementById('rr-pts').textContent = '+0 pts';
+        document.getElementById('rr-sub').textContent = `The price was ${actualPrice.toLocaleString('sv-SE')} kr`;
+      } else {
+        const diff = Math.abs(myGuess - actualPrice);
+        const allDiffs = Object.values(roundGuesses).map(g=>Math.abs(g-actualPrice));
+        const minDiff = Math.min(...allDiffs);
+        const diffStr = myGuess > actualPrice
+          ? `${myGuess.toLocaleString('sv-SE')} kr — you guessed ${(myGuess-actualPrice).toLocaleString('sv-SE')} kr too high`
+          : `${myGuess.toLocaleString('sv-SE')} kr — you guessed ${(actualPrice-myGuess).toLocaleString('sv-SE')} kr too low`;
+
+        if (diff === 0) {
+          rr.className = 'round-result exact-win';
+          document.getElementById('rr-emoji').textContent = '🎯';
+          document.getElementById('rr-title').textContent = 'EXACT MATCH!';
+          document.getElementById('rr-pts').textContent = '+5 pts';
+          document.getElementById('rr-sub').textContent = `${actualPrice.toLocaleString('sv-SE')} kr — you nailed it!`;
+        } else if (diff === minDiff) {
+          rr.className = 'round-result won';
+          document.getElementById('rr-emoji').textContent = '🥇';
+          document.getElementById('rr-title').textContent = 'CLOSEST GUESS!';
+          document.getElementById('rr-pts').textContent = '+3 pts';
+          document.getElementById('rr-sub').textContent = `Actual: ${actualPrice.toLocaleString('sv-SE')} kr · ${diffStr}`;
+        } else {
+          rr.className = 'round-result lost';
+          document.getElementById('rr-emoji').textContent = '😅';
+          document.getElementById('rr-title').textContent = 'NOT THE CLOSEST';
+          document.getElementById('rr-pts').textContent = '+0 pts';
+          document.getElementById('rr-sub').textContent = `Actual: ${actualPrice.toLocaleString('sv-SE')} kr · ${diffStr}`;
+        }
+      }
+    } else if (state.phase === 'guessing') {
+      lastPhase = 'guessing';
+    }
+  });
+}
+
+function renderPlayerScoreboard(sc) {
+  const sb = document.getElementById('player-scoreboard');
+  const sorted = Object.entries(sc).sort((a,b)=>b[1]-a[1]);
+  if (sorted.length === 0) { sb.innerHTML=''; return; }
+  const top = sorted[0][1];
+  sb.innerHTML = sorted.map(([n,pts]) => `
+    <div class="score-card ${pts===top&&top>0?'leader':''} ${n===myName?'leader':''}">
+      <div class="score-name">${n}${n===myName?' ★':''}</div>
+      <div class="score-pts">${pts}<small>pts</small></div>
+    </div>`).join('');
+}
+
+async function submitGuess() {
+  const input = document.getElementById('guess-input');
+  const val = parseFloat(input.value);
+  if (!val || val <= 0) { input.focus(); return; }
+
+  document.getElementById('submit-btn').disabled = true;
+  myGuessThisRound = true;
+
+  // Save guess
+  await dbSet(`guesses/${currentRound}/${sanitize(myName)}`, val);
+
+  document.getElementById('guess-form').style.display = 'none';
+  document.getElementById('guess-locked').style.display = 'block';
+}
+
+// ── RESULTS ──────────────────────────────────────────────────────────────────
+function showResults(sc) {
+  document.getElementById('host-screen').style.display = 'none';
+  document.getElementById('player-screen').style.display = 'none';
+  document.getElementById('results-screen').style.display = 'block';
+
+  const sorted = Object.entries(sc || {}).sort((a,b)=>b[1]-a[1]);
+  const medals = ['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣'];
+
+  if (sorted.length === 0) {
+    document.getElementById('results-content').innerHTML = '<div class="winner-label">No scores recorded</div>';
+    return;
+  }
+
+  const topScore = sorted[0][1];
+  const topPlayers = sorted.filter(([,s])=>s===topScore);
+
+  document.getElementById('results-content').innerHTML = topPlayers.length > 1
+    ? `<div class="winner-label">IT'S A TIE!</div><div class="winner-big">${topPlayers.map(([n])=>n).join(' & ')}</div><div class="winner-pts">${topScore} pts each</div>`
+    : `<div class="winner-label">🏆 Champion</div><div class="winner-big">${sorted[0][0]}</div><div class="winner-pts">${topScore} points</div>`;
+
+  document.getElementById('final-podium').innerHTML = sorted.map(([n,pts],i) => `
+    <div class="podium-card ${i===0?'p1':''}">
+      <span class="podium-medal">${medals[i]||''}</span>
+      <div class="podium-name">${n}</div>
+      <div class="podium-pts">${pts} pts</div>
+    </div>`).join('');
+
+  launchConfetti();
+}
+
+// ── CONFETTI ─────────────────────────────────────────────────────────────────
+function launchConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const colors = ['#FFD700','#FF4444','#4488FF','#44FF88','#FF88FF','#FF8800','#ffffff'];
+  const pieces = Array.from({length:120}, () => ({
+    x: Math.random()*canvas.width, y: -20-Math.random()*100,
+    w: 6+Math.random()*8, h: 8+Math.random()*14,
+    color: colors[Math.floor(Math.random()*colors.length)],
+    rot: Math.random()*360, rotV: (Math.random()-.5)*8,
+    vx: (Math.random()-.5)*4, vy: 2+Math.random()*4,
+    op: .7+Math.random()*.3
+  }));
+  let f = 0;
+  (function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    let alive = false;
+    pieces.forEach(p => {
+      if(p.y<canvas.height+20) alive=true;
+      p.x+=p.vx; p.y+=p.vy; p.rot+=p.rotV;
+      ctx.save(); ctx.globalAlpha=p.op;
+      ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle=p.color;
+      ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      ctx.restore();
+    });
+    if(alive&&f++<300) requestAnimationFrame(draw);
+    else ctx.clearRect(0,0,canvas.width,canvas.height);
+  })();
+}
+</script>
+</body>
+</html>
